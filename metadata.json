@@ -1,0 +1,6 @@
+{
+  "name": "RAS³: Desarrollo Integral",
+  "description": "Herramienta interactiva para aplicar el Método RAS³ (Reingeniería Administrativa Sostenible) guiado por Inteligencia Artificial (Visir Digital).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
