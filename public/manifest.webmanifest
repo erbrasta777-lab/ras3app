@@ -1,0 +1,21 @@
+{
+  "id": "/",
+  "name": "BANCO DE LAS IDEAS - Método RAS³",
+  "short_name": "Banco Ideas",
+  "description": "SaaS de gobernanza digital e incubación de proyectos de impacto socioambiental bajo el Método RAS³ de Herbert Gamarra.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#064e3b",
+  "background_color": "#ffffff",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

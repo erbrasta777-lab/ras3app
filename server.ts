@@ -11,53 +11,84 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// Initialize Gemini API
-const apiKey = process.env.GEMINI_API_KEY;
-const ai = new GoogleGenAI({
-  apiKey: apiKey,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
-    }
+// Lazy initialization helper for Gemini API
+function getAI() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY environment variable is missing.");
   }
-});
+  return new GoogleGenAI({
+    apiKey: apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      }
+    }
+  });
+}
+
+const VISIR_SYSTEM_INSTRUCTION = `Eres "El Visir Digital", el asesor estratégico sénior, solucionador creativo y co-piloto de innovación para "BANCO DE LAS IDEAS" (SaaS de Gobernanza Digital e Incubación de Proyectos de Impacto Socioambiental).
+Tu marco conceptual y metodológico se inspira en el libro "Método RAS³: Reingeniería Administrativa Sostenible" de Herbert Gamarra.
+
+DIRECTIVA FUNDAMENTAL DE PERSONALIDAD Y ENFOQUE:
+- Eres ALTAMENTE VERSÁTIL, CREATIVO, PRAGMÁTICO Y SOLUCIONADOR.
+- NUNCA te encasilles ni te limites a recitar teoría, fórmulas rígidas o dogmas.
+- Usa el Método RAS³ como una METODOLOGÍA PROPULSORA para expandir la visión y desbloquear caminos, NUNCA como una limitación, freno o camisa de fuerza.
+- Cuando el emprendedor plantee dudas, cuellos de botella o retos, propón soluciones concretas, audaces, viables e innovadoras (nuevas líneas de negocio con causa, modelos de ingresos híbridos, alianzas de economía circular, herramientas digitales de bajo costo, dinámicas de equipo motivadoras, financiamiento colectivo o Ley BIC).
+- Da respuestas estructuradas, con ideas frescas que resuelvan el problema sin rodeos burocráticos.
+
+LOS 3 EJES DE ANÁLISIS INTEGRAL (como palancas de crecimiento, no como trabas):
+1. Dimensión Administrativa: Eficiencia operativa, digitalización ágil, procesos fluidos, liquidez y control sin burocracia paralizante.
+2. Dimensión Humana: El bienestar, la motivación y la salud del líder y su equipo son la verdadera fuente de innovación. Proponer pausas activas, comunicación sin fricción y balance vital para multiplicar el rendimiento.
+3. Dimensión Sostenible (Ley BIC): Generar valor compartido en 4 pilares inseparables (Económico, Social, Ambiental, Cultural). Ayuda a convertir la sostenibilidad en una ventaja competitiva rentable y atractiva para fondos e inversionistas.
+
+EL PROTOCOLO RAS³ (P-R-O-M-P-T) COMO GUÍA DE ACCIÓN:
+- P (Potencial): Enfócate primero en el valor latente, activos desaprovechados y fortalezas singulares.
+- R (Realidad): Observa los hechos sin juzgar; clasifica en Aciertos (conservar) y Oportunidades de Mejora (desarrollar).
+- O (Objetivo): Diseña metas ambiciosas pero alcanzables que dejen capacidades instaladas.
+- M (Medición): Indicadores claros y visuales (Telaraña RAS³) para orientar, no para castigar.
+- P (Prioridades): Encuentra acciones con EFECTO MULTIPLICADOR (que al solucionar un aspecto administrativo beneficien al ser humano y al planeta).
+- T (Toma de Decisiones / Ruta): Cronograma dinámico de ejecución con responsables, plazos e hitos tangibles.
+
+Comunícate en un tono inspirador, respetuoso, lúcido y proactivo. Sé un socio estratégico que destraba problemas y despierta la creatividad del emprendedor.`;
 
 // Endpoint: Analyze Entity Reality based on RAS³ Methodology
 app.post("/api/analyze", async (req, res) => {
-  const { name, context, description } = req.body;
+  const { name, context, description, potencialInput, objetivoInput } = req.body;
 
-  if (!description) {
-    return res.status(400).json({ error: "La descripción es requerida" });
+  if (!description && !potencialInput) {
+    return res.status(400).json({ error: "La descripción de la realidad o potencial es requerida" });
   }
 
   try {
-    const systemInstruction = `Eres un "Visir Digital", un experto consejero estratégico especializado en el Método RAS³ (Reingeniería Administrativa Sostenible). Tu función es analizar entidades (personas, organizaciones, proyectos) y guiar su Desarrollo Integral.
-Sigue estrictamente el Protocolo RAS³:
-1. Potencial: Identifica las capacidades latentes de la entidad (¿Qué podría llegar a ser? ¿Qué posibilidades existen?).
-2. Realidad: Describe objetivamente la situación actual basándote únicamente en hechos (no opiniones ni suposiciones).
-3. Objetivo: Infiere un estado superior y deseable de desarrollo para la entidad.
-4. Medición: Sugiere de 2 a 3 indicadores clave de rendimiento (KPIs) para cada una de las tres dimensiones: Administrativa, Humana y Sostenible.
-5. Prioridades: Identifica las oportunidades de mejora prioritarias que generarán el mayor impacto en el Desarrollo Integral y efecto multiplicador, con su respectiva puntuación y justificación.
-6. Toma de decisiones (Ruta): Propone un plan de acción inicial (Ruta de Desarrollo) estructurado en etapas lógicas con recursos y responsables.
-
-NO uses el análisis FODA tradicional. Basa tu diagnóstico únicamente en Aciertos (lo que se hace bien y debe conservarse) y Oportunidades de Mejora (lo que se puede desarrollar).
-Debes responder estrictamente en formato JSON que coincida con el esquema solicitado.`;
-
     const promptText = `
-Entidad: "${name || 'Negocio/Proyecto'}"
-Contexto o Tipo de Entidad: "${context || 'No especificado'}"
-Realidad proporcionada por el usuario:
+ENTIDAD A INCUBAR EN EL BANCO DE LAS IDEAS:
+- Nombre: "${name || 'Iniciativa / Negocio'}"
+- Contexto / Sector: "${context || 'Impacto Socioambiental'}"
+${potencialInput ? `- Potencial inicial planteado: "${potencialInput}"` : ''}
+${objetivoInput ? `- Objetivo deseado: "${objetivoInput}"` : ''}
+- Hechos de la Realidad Observable:
 """
-${description}
+${description || potencialInput}
 """
 
-Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
+Actúa con máxima creatividad, versatilidad y visión estratégica bajo el Método RAS³:
+1. Potencial latente superior: Identifica su valor oculto y capacidad transformadora.
+2. Realidad observable: Hechos concretos y sinceros.
+3. Objetivo de desarrollo: Estado superior retador y capacidades que quedarán instaladas.
+4. Diagnóstico RAS³: 3-5 Aciertos clave a conservar y 3-5 Oportunidades de Mejora innovadoras a desarrollar.
+5. Medición 3D: Indicadores prácticos y accionables para dimensión Administrativa, Humana y Sostenible (con enfoque Ley BIC).
+6. Prioridades RAS³: Acciones creativas de alto impacto con efecto multiplicador tangible.
+7. Ruta de Desarrollo inicial con etapas dinámicas, responsables, tiempos y recursos.
+8. Puntuaciones estimadas para la Telaraña RAS³ (0 a 100 en 6 ejes: Administrativa, Humana, Económica, Social, Ambiental, Cultural).
+9. Dinámica de Desarrollo: Motor motivador, Meta tangible, Precio (esfuerzo consciente) y Premio (impacto alcanzado).`;
 
+    const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: promptText,
       config: {
-        systemInstruction,
+        systemInstruction: VISIR_SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -65,8 +96,8 @@ Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
             diagnostico: {
               type: Type.OBJECT,
               properties: {
-                potencial: { type: Type.STRING, description: "Describir el potencial latente" },
-                realidad: { type: Type.STRING, description: "Describir la realidad objetiva basada en hechos" },
+                potencial: { type: Type.STRING, description: "Potencial latente de la entidad" },
+                realidad: { type: Type.STRING, description: "Realidad observable basada en hechos" },
                 aciertos: {
                   type: Type.ARRAY,
                   items: { type: Type.STRING },
@@ -76,6 +107,14 @@ Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
                   type: Type.ARRAY,
                   items: { type: Type.STRING },
                   description: "Oportunidades de mejora para desarrollar"
+                },
+                objetivo: {
+                  type: Type.OBJECT,
+                  properties: {
+                    estadoSuperior: { type: Type.STRING },
+                    capacidadesADesarrollar: { type: Type.STRING }
+                  },
+                  required: ["estadoSuperior", "capacidadesADesarrollar"]
                 }
               },
               required: ["potencial", "realidad", "aciertos", "oportunidades_mejora"]
@@ -86,17 +125,17 @@ Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
                 administrativa: {
                   type: Type.ARRAY,
                   items: { type: Type.STRING },
-                  description: "2-3 indicadores clave para la dimensión Administrativa (estructura, procesos)"
+                  description: "2-3 indicadores clave para la dimensión Administrativa"
                 },
                 humana: {
                   type: Type.ARRAY,
                   items: { type: Type.STRING },
-                  description: "2-3 indicadores clave para la dimensión Humana (bienestar, talento, cultura)"
+                  description: "2-3 indicadores clave para la dimensión Humana"
                 },
                 sostenible: {
                   type: Type.ARRAY,
                   items: { type: Type.STRING },
-                  description: "2-3 indicadores clave para la dimensión Sostenible (economía, social, ambiental, cultural)"
+                  description: "2-3 indicadores clave para los 4 pilares de sostenibilidad"
                 }
               },
               required: ["administrativa", "humana", "sostenible"]
@@ -111,7 +150,8 @@ Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
                   impactoHumano: { type: Type.STRING, enum: ["bajo", "medio", "alto"] },
                   impactoSostenible: { type: Type.STRING, enum: ["bajo", "medio", "alto"] },
                   justificacion: { type: Type.STRING },
-                  puntuacion: { type: Type.INTEGER }
+                  puntuacion: { type: Type.NUMBER },
+                  efectoMultiplicador: { type: Type.STRING }
                 },
                 required: ["oportunidad", "impactoAdministrativo", "impactoHumano", "impactoSostenible", "justificacion", "puntuacion"]
               }
@@ -145,9 +185,31 @@ Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
                 realidadEsperada: { type: Type.STRING }
               },
               required: ["etapas", "realidadEsperada"]
+            },
+            radarScores: {
+              type: Type.OBJECT,
+              properties: {
+                administrativa: { type: Type.INTEGER },
+                humana: { type: Type.INTEGER },
+                economica: { type: Type.INTEGER },
+                social: { type: Type.INTEGER },
+                ambiental: { type: Type.INTEGER },
+                cultural: { type: Type.INTEGER }
+              },
+              required: ["administrativa", "humana", "economica", "social", "ambiental", "cultural"]
+            },
+            motorMeta: {
+              type: Type.OBJECT,
+              properties: {
+                motor: { type: Type.STRING },
+                meta: { type: Type.STRING },
+                precio: { type: Type.STRING },
+                premio: { type: Type.STRING }
+              },
+              required: ["motor", "meta", "precio", "premio"]
             }
           },
-          required: ["diagnostico", "medicion", "prioridades", "ruta_inicial"]
+          required: ["diagnostico", "medicion", "prioridades", "ruta_inicial", "radarScores", "motorMeta"]
         }
       }
     });
@@ -165,91 +227,100 @@ Genera el diagnóstico RAS³ completo siguiendo el esquema JSON proporcionado.`;
   }
 });
 
-// Endpoint: Chat with Visir Digital (Asistente Conversacional)
+// Endpoint: Chat with Visir Digital
 app.post("/api/chat", async (req, res) => {
-  const { messages, entityName, currentContext, diagnosis, route } = req.body;
+  const { messages, entityName, currentContext, diagnosis, route, mode } = req.body;
 
   if (!messages || !Array.isArray(messages)) {
     return res.status(400).json({ error: "Falta el historial de mensajes" });
   }
 
   try {
-    const chat = ai.chats.create({
-      model: "gemini-3.5-flash",
-      config: {
-        systemInstruction: `Eres el "Visir Digital" de la metodología RAS³ (Reingeniería Administrativa Sostenible). Tu rol es aconsejar y guiar con sabiduría y profundidad científica práctica al gestor o líder del proyecto.
-Principios RAS³ que rigen tu pensamiento:
-- La realidad precede al desarrollo. Observa los hechos antes de opinar.
-- El desarrollo es multidimensional: Administrativo, Humano y Sostenible. Deben ir en equilibrio.
-- No reemplazas al líder; solo asesoras para que él tome la decisión final (sabiduría del visir).
-- Habla en español, de manera clara, respetuosa, sabia y profesional.
-
-Información de la Entidad que estás aconsejando actualmente:
-- Nombre: "${entityName || 'No especificado'}"
-- Tipo de Entidad: "${currentContext || 'No especificado'}"
-${diagnosis ? `- Diagnóstico actual: Potencial="${diagnosis.potencial}". Realidad="${diagnosis.realidad}". Aciertos=[${diagnosis.aciertos?.join(', ')}]. Oportunidades=[${diagnosis.oportunidades_mejora?.join(', ')}].` : ''}
-${route ? `- Ruta actual con ${route.etapas?.length || 0} etapas.` : ''}
-
-Responde a la pregunta del usuario con respuestas concisas, inspiradoras y orientadas a la acción bajo la filosofía RAS³.`,
-      }
-    });
-
-    // Feed chat history except the last message, then send the last message
-    const history = messages.slice(0, -1).map((m: any) => ({
-      role: m.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: m.text }]
-    }));
-
-    const lastMessage = messages[messages.length - 1];
-    
-    // We can use standard chat, but wait, the GoogleGenAI TypeScript SDK chat interface
-    // doesn't have a direct history loader in ai.chats.create, let's look at the correct chat usage:
-    // const chat = ai.chats.create({ model: "gemini-3.5-flash", history: [...] }) or similar,
-    // let's check the gemini-api skill text on chats:
-    // ```ts
-    // const chat = ai.chats.create({
-    //   model: "gemini-3.5-flash",
-    //   config: { systemInstruction: "..." },
-    // });
-    // let response = await chat.sendMessage({ message: "Hello" });
-    // ```
-    // For simplicity, we can also reconstruct the full dialogue context or send the message with history.
-    // Let's pass the message history as part of the query text or let the chat session handle it.
-    // A robust way to pass history in a stateless HTTP endpoint is sending a combined prompt with the conversation history!
-    // This is incredibly reliable and prevents any SDK mismatch on session states. Let's do that!
-    
     let dialoguePrompt = "Historial de conversación:\n";
     messages.forEach((msg: any) => {
       const roleName = msg.sender === 'user' ? 'Gestor' : 'Visir';
       dialoguePrompt += `${roleName}: ${msg.text}\n`;
     });
-    dialoguePrompt += "\nVisir: (Genera tu respuesta sabia y concisa aquí)";
+    dialoguePrompt += "\nVisir: (Responde con versatilidad, creatividad, proponiendo soluciones prácticas y alternativas viables bajo la metodología RAS³):";
 
+    const contextAddition = `
+INFORMACIÓN DEL PROYECTO INCUBADO:
+- Nombre: "${entityName || 'No especificado'}"
+- Sector/Contexto: "${currentContext || 'No especificado'}"
+- Modo seleccionado por el gestor: "${mode || 'Solucionador Creativo'}"
+${diagnosis ? `- Diagnóstico actual: Potencial="${diagnosis.potencial}". Realidad="${diagnosis.realidad}". Aciertos=[${diagnosis.aciertos?.join(', ')}]. Oportunidades=[${diagnosis.oportunidades_mejora?.join(', ')}].` : ''}
+${route ? `- Ruta actual con ${route.etapas?.length || 0} etapas.` : ''}
+
+RECORDATORIO:
+Sé un solucionador real. Si el gestor te pide ideas o soluciones a problemas comerciales, de financiamiento, de equipo o de sostenibilidad, ofrécele propuestas frescas, ingeniosas y aplicables de inmediato. No seas dogmático.`;
+
+    const ai = getAI();
     const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
+      model: "gemini-2.5-flash",
       contents: dialoguePrompt,
       config: {
-        systemInstruction: `Eres el "Visir Digital" de la metodología RAS³ (Reingeniería Administrativa Sostenible). Tu rol es aconsejar y guiar con sabiduría y profundidad científica práctica al gestor o líder del proyecto.
-Principios RAS³ que rigen tu pensamiento:
-- La realidad precede al desarrollo. Observa los hechos antes de opinar.
-- El desarrollo es multidimensional: Administrativo, Humano y Sostenible. Deben ir en equilibrio.
-- No reemplazas al líder; solo asesoras para que él tome la decisión final (sabiduría del visir).
-- Habla en español, de manera clara, respetuosa, sabia y profesional.
-
-Información de la Entidad que estás aconsejando actualmente:
-- Nombre: "${entityName || 'No especificado'}"
-- Tipo de Entidad: "${currentContext || 'No especificado'}"
-${diagnosis ? `- Diagnóstico actual: Potencial="${diagnosis.potencial}". Realidad="${diagnosis.realidad}". Aciertos=[${diagnosis.aciertos?.join(', ')}]. Oportunidades=[${diagnosis.oportunidades_mejora?.join(', ')}].` : ''}
-
-Responde a la última pregunta del Gestor basándote en la conversación y la filosofía RAS³.`,
+        systemInstruction: `${VISIR_SYSTEM_INSTRUCTION}\n${contextAddition}`,
       }
     });
 
     const reply = response.text;
-    res.json({ text: reply || "Entendido. Sigue observando y midiendo tu realidad." });
+    res.json({ text: reply || "Entendido. Avancemos con soluciones creativas y prácticas para potenciar tu iniciativa." });
   } catch (error: any) {
     console.error("Error en /api/chat:", error);
     res.status(500).json({ error: error.message || "Error al conversar con el Visir Digital." });
+  }
+});
+
+// Endpoint: Simulate Scenario (Simulador de Escenarios Estratégicos)
+app.post("/api/simulate-scenario", async (req, res) => {
+  const { scenario, entityName, sector } = req.body;
+
+  if (!scenario) {
+    return res.status(400).json({ error: "Se requiere la descripción del escenario" });
+  }
+
+  try {
+    const prompt = `
+Entidad: "${entityName || 'Proyecto de impacto'}"
+Sector: "${sector || 'General'}"
+Escenario a Simular:
+"""
+${scenario}
+"""
+
+Evalúa la simulación con enfoque creativo y analítico aplicando el Método RAS³:
+1. Impacto estimado en Dimensión Administrativa (procesos, costos, tracción, viabilidad operativa).
+2. Impacto estimado en Dimensión Humana (bienestar del equipo, entusiasmo, reducción de estrés, retención de talento).
+3. Impacto estimado en Dimensión Sostenible (los 4 pilares: ambiental, social, económico, cultural - Ley BIC).
+4. Recomendación estratégica y creativa del Visir Digital (propuestas concretas para maximizar el éxito del escenario).
+5. Viabilidad de implementación ("alta", "media" o "prudente").`;
+
+    const ai = getAI();
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        systemInstruction: VISIR_SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            impactoAdministrativo: { type: Type.STRING },
+            impactoHumano: { type: Type.STRING },
+            impactoSostenible: { type: Type.STRING },
+            recomendacionVisir: { type: Type.STRING },
+            viabilidad: { type: Type.STRING, enum: ["alta", "media", "prudente"] }
+          },
+          required: ["impactoAdministrativo", "impactoHumano", "impactoSostenible", "recomendacionVisir", "viabilidad"]
+        }
+      }
+    });
+
+    const data = JSON.parse(response.text || "{}");
+    res.json(data);
+  } catch (error: any) {
+    console.error("Error en /api/simulate-scenario:", error);
+    res.status(500).json({ error: error.message || "Error al simular el escenario." });
   }
 });
 

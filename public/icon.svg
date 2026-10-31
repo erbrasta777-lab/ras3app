@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="128" fill="#064e3b" />
+  <circle cx="256" cy="256" r="180" fill="none" stroke="#34d399" stroke-width="8" stroke-dasharray="16 12" />
+  <path d="M256 120 L350 280 L162 280 Z" fill="none" stroke="#fbbf24" stroke-width="14" stroke-linejoin="round" />
+  <circle cx="256" cy="256" r="50" fill="#059669" />
+  <text x="256" y="380" font-family="serif" font-size="52" font-weight="bold" fill="#ffffff" text-anchor="middle">RAS³</text>
+  <text x="256" y="420" font-family="sans-serif" font-size="22" font-weight="600" fill="#a7f3d0" text-anchor="middle" letter-spacing="4">BANCO DE LAS IDEAS</text>
+</svg>

@@ -4,9 +4,13 @@ export interface Entity {
   description: string;
   createdAt: string;
   updatedAt: string;
-  level: number; // calculated level (e.g. 0 to 100) based on completing steps and KPIs met
+  level: number; // 0 to 100 level of maturity in RAS³
   currentStep: 'diagnostico' | 'medicion' | 'priorizacion' | 'ruta' | 'completo';
   iterations: Iteration[];
+  sector?: string;
+  scale?: string;
+  challenge?: string;
+  category?: 'startup' | 'microempresa' | 'ong' | 'municipalidad' | 'universidad' | 'empresa_familiar' | 'cooperativa' | 'proyecto_personal';
 }
 
 export interface Iteration {
@@ -17,6 +21,31 @@ export interface Iteration {
   kpiDimension?: KPIDimension;
   priorities?: PriorityAction[];
   route?: DevelopmentRoute;
+  radarScores?: RadarScores;
+  motorMeta?: MotorMeta;
+  bicGovernance?: BICGovernance;
+}
+
+export interface MotorMeta {
+  motor: string; // ¿Qué impulso o convicción pone en movimiento la entidad?
+  meta: string; // ¿Hacia dónde se orienta el desarrollo?
+  precio: string; // ¿Qué esfuerzo, disciplina o inversión asume la entidad?
+  premio: string; // Las capacidades adquiridas y valor generado durante el proceso
+}
+
+export interface BICGovernance {
+  propositoSocioambiental: string; // Propósito de triple impacto alineado a Ley BIC
+  beneficiarios: string; // Comunidades o grupos de interés impactados
+  modeloImpacto: string; // Cómo se genera valor económico, social, ambiental y cultural
+}
+
+export interface RadarScores {
+  administrativa: number; // 0 - 100
+  humana: number; // 0 - 100
+  economica: number; // 0 - 100
+  social: number; // 0 - 100
+  ambiental: number; // 0 - 100
+  cultural: number; // 0 - 100
 }
 
 export interface Diagnosis {
@@ -24,6 +53,10 @@ export interface Diagnosis {
   realidad: string;
   aciertos: string[];
   oportunidades_mejora: string[];
+  objetivo?: {
+    estadoSuperior: string;
+    capacidadesADesarrollar: string;
+  };
 }
 
 export interface KPI {
@@ -33,6 +66,7 @@ export interface KPI {
   target: string; // meta
   status: 'pendiente' | 'en_progreso' | 'logrado';
   evidence?: string;
+  pilar?: 'administrativo' | 'humano' | 'economico' | 'social' | 'ambiental' | 'cultural';
 }
 
 export interface KPIDimension {
@@ -49,6 +83,7 @@ export interface PriorityAction {
   impactoSostenible: 'bajo' | 'medio' | 'alto';
   justificacion: string;
   puntuacion: number; // 1-10 priority score
+  efectoMultiplicador?: string; // Por qué apalanca las tres dimensiones simultáneamente
 }
 
 export interface RouteStage {
@@ -75,4 +110,14 @@ export interface ChatMessage {
   sender: 'user' | 'visir';
   text: string;
   timestamp: string;
+}
+
+export interface ScenarioSimulation {
+  id: string;
+  scenario: string;
+  impactoAdministrativo: string;
+  impactoHumano: string;
+  impactoSostenible: string;
+  recomendacionVisir: string;
+  viabilidad: 'alta' | 'media' | 'prudente';
 }
